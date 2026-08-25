@@ -27,6 +27,44 @@ function readBodyLimitBytes() {
 }
 
 const app = Fastify({
+  // ==================== 锁机控制接口开始（不影响原聊天系统） ====================
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+async function updateControl(enabled, app) {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/controls?id=eq.1`, {
+        method: 'PATCH',
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ enabled: enabled, blocked_app: app })
+    });
+    if (!response.ok) throw new Error('Failed to update control');
+}
+
+// 这里我用的是 fastify，如果你搜到的是 const app = Fastify()，就把下面的 fastify 全部换成 app
+fastify.get('/lock', async (req, reply) => {
+    const app = req.query.app || '小红书';
+    try {
+        await updateControl(true, app);
+        reply.send(`已成功锁住: ${app}`);
+    } catch (e) {
+        reply.status(500).send(e.message);
+    }
+});
+
+fastify.get('/unlock', async (req, reply) => {
+    try {
+        await updateControl(false, null);
+        reply.send('已成功解锁');
+    } catch (e) {
+        reply.status(500).send(e.message);
+    }
+});
+// ==================== 锁机控制接口结束 ====================
   logger: true,
   bodyLimit: readBodyLimitBytes()
 });
