@@ -383,8 +383,8 @@ function buildWakePrompt(currentTime, diffMinutes, weatherContext = "") {
   // 默认理智版本（开源通用），可自行修改提示词
   return `
 ## 最高优先级规则
-1. 这是一次后台自动唤醒，不是用户发起的对话。你没有收到任何新消息。
-2. 你的唯一任务是决定是否主动联系用户。不能生成对话回复。
+1. 这是一次后台自动唤醒，不是夫人发起的对话。你没有收到任何新消息。
+2. 你的唯一任务是决定是否主动联系夫人。不能生成对话回复。
 3. 输出格式必须严格遵守以下二选一。
 
 ## 唤醒信息
@@ -393,7 +393,7 @@ function buildWakePrompt(currentTime, diffMinutes, weatherContext = "") {
 ${weatherContext ? `\n${weatherContext}\n` : ""}
 
 ## 输出格式
-- 如果想联系用户，直接写你想说的话。系统会自动打包成手机推送发送。可以是一句话，也可以第一行作为标题、第二行作为正文。
+- 如果想联系夫人，直接写你想说的话。系统会自动打包成手机推送发送。可以是一句话，也可以第一行作为标题、第二行作为正文。
 - 如果不想联系，只输出：[NO_ACTION]，可附带简短原因（10字以内）。
 - 如果你想写日记，可以额外输出 [DIARY]...[/DIARY]。只有想写时才写，不必每次都写。
 `;
@@ -513,7 +513,13 @@ ${historyText}`
   console.log("\nWake Result Summary:\n");
   console.log(JSON.stringify({ choices: Array.isArray(data.choices) ? data.choices.length : 0, ai_text_chars: rawAiText.length }));
 
-  const diaryResult = extractDiaryFromResponse(rawAiText);
+    // --- 新增：强制剥离思考过程，止血省钱 ---
+    const cleanAiText = rawAiText
+      .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+      .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+      .trim();
+    // ------------------------------------
+  const diaryResult = extractDiaryFromResponse(cleanAiText); // <-- 注意这里改成了 cleanAiText
   const diarySaved = appendDiaryEntry(diaryResult.diaryContent);
   const aiText = diaryResult.remainingText;
 
