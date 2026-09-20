@@ -552,9 +552,9 @@ app.get("/v1/models", async (req, reply) => {
     "[AG]gemini-3.1-pro-high",                           
     "[Bu满血]gemini-3.8-flash-c",                          
     "[Bu满血]gemini-3.7-flash-c",                            
-    "[K2-个人]claude-opus-4-6-thinking"
+    "[K2-个人]claude-opus-4-6-thinking",
     "[Bu满血]gemini-3.1-pro-preview-c",                            
-    "[企业CLI] gemini-3.1-pro-preview-max" 
+    "[企业CLI]gemini-3.1-pro-preview-max" 
   ].filter(Boolean);
 
   return {
