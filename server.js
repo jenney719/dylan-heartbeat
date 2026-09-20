@@ -546,10 +546,19 @@ app.get("/healthz", async () => ({ status: "ok" }));
 // Models
 // ========================
 app.get("/v1/models", async (req, reply) => {
-  reply.send({
+  // 这里列出你想在 Kelivo 下拉菜单里看到的模型名字（必须是你的中转站聚梦支持的模型！）
+  const availableModels = [
+    process.env.MODEL_NAME || "gemini-3.1-pro-low", // 你的默认心跳模型
+    "[AG]gemini-3.1-pro-high",                           
+    "[Bu满血]gemini-3.8-flash-c",                          
+    "[Bu满血]gemini-3.7-flash-c",                            
+    "[K2-个人]claude-opus-4-6-thinking"                              
+  ].filter(Boolean);
+
+  return {
     object: "list",
-    data: [{ id: configuredModelName(), object: "model", created: 0, owned_by: "gateway" }]
-  });
+    data: availableModels.map(id => ({ id, object: "model", owned_by: "custom" }))
+  };
 });
 
 // ========================
