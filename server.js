@@ -551,10 +551,13 @@ app.get("/v1/models", async (req, reply) => {
     process.env.MODEL_NAME || "gemini-3.1-pro-low", // 你的默认心跳模型
     "[AG]gemini-3.1-pro-high",                           
     "[Bu满血]gemini-3.8-flash-c",                          
-    "[Bu满血]gemini-3.7-flash-c",                            
-    "[K2-个人]claude-opus-4-6-thinking",
-    "[Bu满血]gemini-3.1-pro-preview-c",                            
-    "[企业CLI]gemini-3.1-pro-preview-max" 
+    "[Bu满血]gemini-3.7-flash-c", 
+    "[Bu满血]gemini-3.1-pro-preview-c", 
+    "[满血Ais]gemini-3.7-flash",                          
+    "[满血Ais]gemini-3.8-flash", 
+    "[满血Ais]gemini-3.1-pro-preview", 
+    "[K2-个人]claude-opus-4-6-thinking",                     
+    "[K2-个人]claude-opus-5-thinking" 
   ].filter(Boolean);
 
   return {
