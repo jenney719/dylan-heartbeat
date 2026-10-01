@@ -122,7 +122,12 @@ function normalizeContentToText(content) {
 }
 
 function normalizeMessageForTimeline(msg) {
-  return { ...msg, content: normalizeContentToText(msg.content) };
+  let text = normalizeContentToText(msg.content);
+  // 用户消息若缺少时间前缀，自动补上当前时间，保证后台唤醒能正确计算时间差
+  if (msg.role === "user" && text && !/^\s*（?\s*\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(text)) {
+    text = `${formatDateTimeInTimeZone(new Date(), TIME_ZONE)} ${text}`;
+  }
+  return { ...msg, content: text };
 }
 
 function prepareMessageForLLM(msg) {
@@ -284,7 +289,21 @@ function extractTimestampWithMemory(msg, tsDB) {
   if (tsDB[fp]) return new Date(tsDB[fp]);
   const fpStripped = makeFingerprintStripped(msg);
   if (tsDB[fpStripped]) return new Date(tsDB[fpStripped]);
-  return null;
+
+  // --- 新增：优先读客户端自带的 sent_at / timestamp 字段 ---
+  const rawTime = msg.sent_at || msg.created_at || msg.timestamp || msg.create_time;
+  let resolved = null;
+  if (rawTime != null) {
+    const num = Number(rawTime);
+    resolved = !isNaN(num) ? new Date(num > 1e11 ? num : num * 1000) : new Date(rawTime);
+  }
+  // --- 兜底：都没有，就用服务器收到消息的当下时间 ---
+  if (!resolved || isNaN(resolved.getTime())) resolved = new Date();
+
+  const ms = resolved.getTime();
+  tsDB[fp] = ms;
+  if (fpStripped !== fp) tsDB[fpStripped] = ms;
+  return resolved;
 }
 
 // ========================
