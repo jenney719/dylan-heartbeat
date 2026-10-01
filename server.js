@@ -61,6 +61,43 @@ function configuredModelName() {
   // 不能继续硬编码示例模型，否则 Kelivo 模型选择会和真实上游不一致。
   return String(process.env.MODEL_NAME || "gateway-model").trim() || "gateway-model";
 }
+// ========================
+// 多中转站路由：模型名前缀 -> 对应上游
+// ========================
+function resolveUpstreamForModel(modelName) {
+  const rawModel = String(modelName || "").trim();
+  const defaultUpstream = {
+    url: TARGET_API_URL,
+    key: process.env.TARGET_API_KEY,
+    model: rawModel || process.env.MODEL_NAME
+  };
+
+  const aliases = String(process.env.UPSTREAM_ROUTES || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  for (const alias of aliases) {
+    const prefix = alias.toLowerCase() + "/";
+    if (rawModel.toLowerCase().startsWith(prefix)) {
+      const url = process.env[`UPSTREAM_${alias.toUpperCase()}_URL`];
+      const key = process.env[`UPSTREAM_${alias.toUpperCase()}_KEY`];
+      if (url && key) {
+        return { url, key, model: rawModel.slice(prefix.length) };
+      }
+      console.log(`⚠️ 未配置 UPSTREAM_${alias.toUpperCase()}_URL / _KEY，回退到默认上游`);
+    }
+  }
+  return defaultUpstream;
+}
+
+// /v1/models 要暴露的模型名列表
+function exposedModelIds() {
+  const base = [configuredModelName()];
+  const extra = String(process.env.EXTRA_MODELS || "")
+    .split(",").map(s => s.trim()).filter(Boolean);
+  return [...new Set([...base, ...extra])];
+}
 
 // ========================
 // 多模态消息处理
@@ -576,7 +613,8 @@ app.get("/v1/models", async (req, reply) => {
     "[满血Ais]gemini-3.8-flash", 
     "[满血Ais]gemini-3.1-pro-preview", 
     "[K2-个人]claude-opus-4-6-thinking",                     
-    "[K2-个人]claude-opus-5-thinking" 
+    "[K2-个人]claude-opus-5-thinking", 
+     "sfl/[反重力-0.025]gemini-3.7-flash"
   ].filter(Boolean);
 
   return {
@@ -731,14 +769,17 @@ app.post("/v1/chat/completions", async (req, reply) => {
 
     const requestedStream = body?.stream === true;
 
-    // 请求模型
-    const response = await fetch(TARGET_API_URL, {
+// 根据模型名前缀，选择对应的中转站
+    const upstream = resolveUpstreamForModel(body?.model);
+    console.log(`→ 路由到上游: ${upstream.url} | 模型: ${upstream.model}`);
+
+    const response = await fetch(upstream.url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.TARGET_API_KEY}`
+        Authorization: `Bearer ${upstream.key}`
       },
-      body: JSON.stringify({ ...body, messages: llmMessages })
+      body: JSON.stringify({ ...body, model: upstream.model, messages: llmMessages })
     });
 
     const upstreamContentType = response.headers.get("content-type") || "";
