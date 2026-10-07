@@ -806,6 +806,22 @@ app.post("/v1/chat/completions", async (req, reply) => {
     const upstreamContentType = response.headers.get("content-type") || "";
     const shouldStreamResponse = requestedStream || upstreamContentType.includes("text/event-stream");
 
+    // 批注 2026-10-07：把上游真实状态记进日志；出问题时能一眼分清是上游报错还是转发断了。
+    console.log(JSON.stringify({
+      event: "upstream_response",
+      status: response.status,
+      content_type: upstreamContentType
+    }));
+
+    // 批注 2026-10-07：上游报错时别硬按 SSE 直通，否则客户端只会显示"没有可见回复"。
+    if (response.status >= 400) {
+      const upstreamErrorText = await response.text();
+      return reply
+        .code(response.status)
+        .header("Content-Type", upstreamContentType || "application/json")
+        .send(upstreamErrorText);
+    }
+
     // 批注 2026-07-11：Kelivo 关闭 stream 时需要收到普通 JSON；只在请求或上游确认为 SSE 时才按流式直通。
     if (!shouldStreamResponse) {
       const responseText = await response.text();
@@ -824,23 +840,24 @@ app.post("/v1/chat/completions", async (req, reply) => {
       "Cache-Control": "no-cache",
       Connection: "keep-alive"
     });
-    // 批注 2026-10-07：从这里开始响应由我们自己写，告诉 Fastify 不要再插手。
-    reply.hijack();
     streamingStarted = true;
 
+    // 批注 2026-10-07：只做流式直通，不在这里判断客户端是否断开；
+    // 写失败会被下面的 try 捕获，不能让它冒泡成进程级异常。
+    let forwardedChunks = 0;
     const reader = response.body.getReader();
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      // 批注 2026-10-07：客户端已经断开就别再写，否则又会写一个已关闭的 socket。
-      if (req.raw.destroyed || reply.raw.writableEnded) break;
       try {
         reply.raw.write(value);
+        forwardedChunks++;
       } catch (writeErr) {
         console.error("[stream write failed]", writeErr);
         break;
       }
     }
+    console.log(JSON.stringify({ event: "stream_finished", chunks: forwardedChunks }));
     if (!reply.raw.writableEnded) reply.raw.end();
   } catch (err) {
     console.error(err);
