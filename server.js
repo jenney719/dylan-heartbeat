@@ -33,6 +33,16 @@ const app = Fastify({
 
 app.register(require("@fastify/formbody"));
 
+// 批注 2026-10-07：单个请求的异常不能带走整个 gateway 进程。
+// 上游在流式传输中途断开时，Fastify 会抛出 ERR_HTTP_HEADERS_SENT；
+// Railway 上 gateway 一退出就是 502，所以这里兜住进程级异常。
+process.on("uncaughtException", err => {
+  console.error("[uncaughtException]", err);
+});
+process.on("unhandledRejection", err => {
+  console.error("[unhandledRejection]", err);
+});
+
 const PORT = Number(process.env.PORT) || 3000;
 const TARGET_API_URL = process.env.TARGET_API_URL;
 const TIME_ZONE = resolveTimeZone();
@@ -780,6 +790,10 @@ app.post("/v1/chat/completions", async (req, reply) => {
     const upstream = resolveUpstreamForModel(body?.model);
     console.log(`→ 路由到上游: ${upstream.url} | 模型: ${upstream.model}`);
 
+    // 批注 2026-10-07：开流之后 reply 就不能再 send 了；
+    // 用这个标记区分"响应头还没发"和"已经在流式直通"两种状态。
+    let streamingStarted = false;
+
     const response = await fetch(upstream.url, {
       method: "POST",
       headers: {
@@ -810,17 +824,35 @@ app.post("/v1/chat/completions", async (req, reply) => {
       "Cache-Control": "no-cache",
       Connection: "keep-alive"
     });
+    // 批注 2026-10-07：从这里开始响应由我们自己写，告诉 Fastify 不要再插手。
+    reply.hijack();
+    streamingStarted = true;
 
     const reader = response.body.getReader();
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      reply.raw.write(value);
+      // 批注 2026-10-07：客户端已经断开就别再写，否则又会写一个已关闭的 socket。
+      if (req.raw.destroyed || reply.raw.writableEnded) break;
+      try {
+        reply.raw.write(value);
+      } catch (writeErr) {
+        console.error("[stream write failed]", writeErr);
+        break;
+      }
     }
-    reply.raw.end();
+    if (!reply.raw.writableEnded) reply.raw.end();
   } catch (err) {
     console.error(err);
-    reply.code(500).send({ error: err.message });
+    // 批注 2026-10-07：响应头已经发出去时绝不能再 reply.send()，
+    // 那会抛 ERR_HTTP_HEADERS_SENT，把整个进程带走 —— 这就是 Railway 上 502 的直接原因。
+    if (streamingStarted || reply.raw.headersSent) {
+      try {
+        if (!reply.raw.writableEnded) reply.raw.end();
+      } catch {}
+      return;
+    }
+    return reply.code(500).send({ error: err.message });
   }
 });
 
