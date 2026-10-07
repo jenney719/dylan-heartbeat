@@ -644,6 +644,10 @@ app.get("/v1/models", async (req, reply) => {
 // Chat Completions
 // ========================
 app.post("/v1/chat/completions", async (req, reply) => {
+  // 批注 2026-10-07：这个标记必须声明在 try 外面 —— catch 是另一个块作用域，
+  // 写在 try 里的 let 在 catch 里会 ReferenceError（上一版就栽在这里：
+  // 出错时没有 raw.end()，客户端就永远停在“生成一半”）。
+  let streamingStarted = false;
   try {
     const body = req.body;
     // 批注 2026-07-15：公开部署时日志不能默认写入完整上下文；
@@ -790,10 +794,6 @@ app.post("/v1/chat/completions", async (req, reply) => {
     const upstream = resolveUpstreamForModel(body?.model);
     console.log(`→ 路由到上游: ${upstream.url} | 模型: ${upstream.model}`);
 
-    // 批注 2026-10-07：开流之后 reply 就不能再 send 了；
-    // 用这个标记区分"响应头还没发"和"已经在流式直通"两种状态。
-    let streamingStarted = false;
-
     const response = await fetch(upstream.url, {
       method: "POST",
       headers: {
@@ -862,8 +862,12 @@ app.post("/v1/chat/completions", async (req, reply) => {
   } catch (err) {
     console.error(err);
     // 批注 2026-10-07：响应头已经发出去时绝不能再 reply.send()，
-    // 那会抛 ERR_HTTP_HEADERS_SENT，把整个进程带走 —— 这就是 Railway 上 502 的直接原因。
+    // 那会抛 ERR_HTTP_HEADERS_SENT。正确做法是把这条流收干净再返回。
     if (streamingStarted || reply.raw.headersSent) {
+      console.error(JSON.stringify({
+        event: "stream_aborted",
+        reason: String((err && err.message) || err)
+      }));
       try {
         if (!reply.raw.writableEnded) reply.raw.end();
       } catch {}
