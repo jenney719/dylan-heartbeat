@@ -614,8 +614,8 @@ app.get("/healthz", async () => ({ status: "ok" }));
 app.get("/v1/models", async (req, reply) => {
   // 这里列出你想在 Kelivo 下拉菜单里看到的模型名字（必须是你的中转站聚梦支持的模型！）
   const availableModels = [
-    process.env.MODEL_NAME || "gemini-3.1-pro-low", // 你的默认心跳模型
-    "[AG]gemini-3.1-pro-high",                           
+    process.env.MODEL_NAME || "[AG]gemini-3.8-flash-high", // 你的默认心跳模型
+    "[满血Ais]gemini-4-argon",                           
     "[Bu满血]gemini-3.8-flash-c",                          
     "[Bu满血]gemini-3.7-flash-c", 
     "[Bu满血]gemini-3.1-pro-preview-c", 
