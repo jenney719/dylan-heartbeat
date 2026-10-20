@@ -513,11 +513,18 @@ ${historyText}`
   console.log("\nWake Result Summary:\n");
   console.log(JSON.stringify({ choices: Array.isArray(data.choices) ? data.choices.length : 0, ai_text_chars: rawAiText.length }));
 
-    // --- 新增：强制剥离思考过程，止血省钱 ---
-    const cleanAiText = rawAiText
+    // --- 新增：强制剥离思考过程（兼容闭合、未闭合及裸露的前置英文/中文推理行），止血省钱 ---
+    let cleanAiText = rawAiText
       .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
       .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+      .replace(/^<thinking>[\s\S]*?(?=\[(?:NO_ACTION|BARK|DIARY)\])/i, "")
+      .replace(/^<thought>[\s\S]*?(?=\[(?:NO_ACTION|BARK|DIARY)\])/i, "")
       .trim();
+    // 若模型未包标签但末尾或中间显式给出了 [NO_ACTION]，优先提取该指令，防止前置思维链被误当成 Bark 推送发出
+    const inlineNoActionMatch = cleanAiText.match(/(?:^|\n)\s*\[NO_ACTION\]\s*([^\n]{0,30})/i);
+    if (inlineNoActionMatch) {
+      cleanAiText = `[NO_ACTION] ${(inlineNoActionMatch[1] || "").trim()}`.trim();
+    }
     // ------------------------------------
   const diaryResult = extractDiaryFromResponse(cleanAiText); // <-- 注意这里改成了 cleanAiText
   const diarySaved = appendDiaryEntry(diaryResult.diaryContent);
@@ -531,11 +538,11 @@ ${historyText}`
       ? `（${getLocalTimeString()} 自动唤醒：本次未发送推送｜原因：只写日记）`
       : `（${getLocalTimeString()} 自动唤醒：本次未发送推送｜原因：模型空回复）`;
   // 判断 AI 是否明确要静默
-  } else if (aiText.match(/^\[NO_ACTION\]\s*(.{0,20})?/)) {
-    const noActionMatch = aiText.match(/^\[NO_ACTION\]\s*(.{0,20})?/);
+  } else if (/\[NO_ACTION\]/i.test(aiText)) {
+    const noActionMatch = aiText.match(/\[NO_ACTION\]\s*([^\n]{0,20})/i);
     // AI 选择不发送推送
     console.log("\nAI 选择不发送推送\n");
-    let reason = (noActionMatch[1] || "").trim();
+    let reason = (noActionMatch?.[1] || "").trim();
     if (reason.startsWith("原因：") || reason.startsWith("原因:")) {
       reason = reason.replace(/^原因[：:]\s*/, "").trim();
     }
