@@ -634,6 +634,7 @@ app.get("/v1/models", async (req, reply) => {
     "sfl/[奶油-官混-0.033]gemini-3.8-flash", 
     "sfl/[芋泥-anti-0.025]gemini-3.8-flash",                     
     "sfl/[反重力-0.025]gemini-3.7-flash",
+    "sfl/[A-Ultra-0.08]gemini-4-argon",
     "sfl/[个人kiro-0.24]claude-opus-4-6-thinking" 
   ].filter(Boolean);
 
