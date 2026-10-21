@@ -626,6 +626,7 @@ app.get("/v1/models", async (req, reply) => {
     "[K2-个人]claude-opus-4-7-thinking", 
     "[K2-个人]claude-opus-5-thinking", 
     "[K3-个人]claude-opus-4-6-thinking",
+    "【k-个人】claude-opus-5-5-thinking",
     "[J3]claude-opus-4-6-thinking-c",
     "【豆奶】claude-opus-4-6-thinking", 
     "16z/[0.18/次][按次K6] claude-opus-5-5-thinking", 
