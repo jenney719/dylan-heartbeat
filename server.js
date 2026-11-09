@@ -616,9 +616,8 @@ app.get("/v1/models", async (req, reply) => {
   const availableModels = [
     process.env.MODEL_NAME || "[AG]gemini-3.8-flash-high",  // 你的默认心跳模型
     "[满血Ais]gemini-4-argon",                           
-    "[Bu满血]gemini-3.8-flash-c",                          
-    "[Bu满血]gemini-3.7-flash-c", 
-    "[Bu满血]gemini-3.1-pro-preview-c", 
+    "[AG反重力]gemini-3.8-flash",                          
+    "[AG反重力]gemini-4-argon", 
     "[满血Ais]gemini-3.7-flash",                          
     "[满血Ais]gemini-3.8-flash", 
     "[满血Ais]gemini-3.1-pro-preview", 
