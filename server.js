@@ -614,13 +614,15 @@ app.get("/healthz", async () => ({ status: "ok" }));
 app.get("/v1/models", async (req, reply) => {
   // 这里列出你想在 Kelivo 下拉菜单里看到的模型名字（必须是你的中转站聚梦支持的模型！）
   const availableModels = [
-    process.env.MODEL_NAME || "[AG]gemini-3.8-flash-high",  // 你的默认心跳模型
-    "[满血Ais]gemini-4-argon",                           
+    process.env.MODEL_NAME || "[AG]gemini-3.8-flash-high",  // 你的默认心跳模型                        
     "[AG反重力]gemini-3.8-flash",                          
     "[AG反重力]gemini-4-argon", 
     "[满血Ais]gemini-3.7-flash",                          
     "[满血Ais]gemini-3.8-flash", 
     "[满血Ais]gemini-3.1-pro-preview", 
+    "[满血Ais]gemini-4-argon",   
+    "[企业E]gemini-3.1-pro-preview",                          
+    "[企业E]gemini-4-argon",
     "[K2-个人]claude-opus-4-6-thinking",
     "[K2-个人]claude-opus-4-7-thinking", 
     "[K2-个人]claude-opus-5-thinking", 
@@ -629,10 +631,12 @@ app.get("/v1/models", async (req, reply) => {
     "[J3]claude-opus-4-6-thinking-c",
     "【豆奶】claude-opus-4-6-thinking", 
     "16z/[0.18/次][按次K6] claude-opus-5-5-thinking", 
-    "sfl/[奶油-官混-0.02]gemini-3.7-flash", 
-    "sfl/[奶油-官混-0.033]gemini-3.8-flash", 
+    "16z/[0.18/次][按次K6] claude-opus-4-6-thinking", 
+    "sfl/[奶油-官混-0.04]gemini-3.5-flash", 
+    "sfl/[奶油-官混-0.04]gemini-3.7-flash", 
+    "sfl/[奶油-官混-0.04]gemini-3.8-flash", 
     "sfl/[芋泥-anti-0.025]gemini-3.8-flash",                     
-    "sfl/[反重力-0.025]gemini-3.7-flash",
+    "sfl/[反重力-0.025]gemini-3.8-flash",
     "sfl/[A-Ultra-0.08]gemini-4-argon",
     "sfl/[ver逆-0.18]gemini-4-argon" 
   ].filter(Boolean);
