@@ -628,7 +628,6 @@ app.get("/v1/models", async (req, reply) => {
     "[K2-个人]claude-opus-5-thinking", 
     "[K3-个人]claude-opus-4-6-thinking",
     "【k-个人】claude-opus-5-5-thinking",
-    "[J3]claude-opus-4-6-thinking-c",
     "【豆奶】claude-opus-4-6-thinking", 
     "16z/[0.18/次][按次K6] claude-opus-5-5-thinking", 
     "16z/[0.18/次][按次K6] claude-opus-4-6-thinking", 
@@ -636,7 +635,7 @@ app.get("/v1/models", async (req, reply) => {
     "sfl/[奶油-官混-0.04]gemini-3.7-flash", 
     "sfl/[奶油-官混-0.04]gemini-3.8-flash", 
     "sfl/[芋泥-anti-0.025]gemini-3.8-flash",                     
-    "sfl/[反重力-0.025]gemini-3.8-flash",
+    "sfl/[As逆-0.02]gemini-3.8-flash",
     "sfl/[A-Ultra-0.08]gemini-4-argon",
     "sfl/[ver逆-0.18]gemini-4-argon" 
   ].filter(Boolean);
