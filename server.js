@@ -634,8 +634,11 @@ app.get("/v1/models", async (req, reply) => {
     "sfl/[奶油-官混-0.04]gemini-3.5-flash", 
     "sfl/[奶油-官混-0.04]gemini-3.7-flash", 
     "sfl/[奶油-官混-0.04]gemini-3.8-flash", 
-    "sfl/[芋泥-anti-0.025]gemini-3.8-flash",                     
-    "sfl/[As逆-0.02]gemini-3.8-flash",
+    "sfl/[芋泥as/en-0.025]gemini-3.5-flash",                     
+    "sfl/[芋泥as/en-0.025]gemini-3.8-flash",
+    "sfl/[乌梅-as-0.05]gemini-3.7-flash",
+    "sfl/[乌梅-as-0.05]gemini-3.8-flash",
+    "sfl/[乌梅-as-0.08]gemini-3.1-pro-preview-thinking",
     "sfl/[A-Ultra-0.08]gemini-4-argon",
     "sfl/[ver逆-0.18]gemini-4-argon" 
   ].filter(Boolean);
